@@ -3,68 +3,77 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Frosted Glass Lamp – HTML Widget</title>
+  <title>I Love Lamp – Frosted Glass Widget</title>
   <style>
     :root{
-      --glow-r: 255; --glow-g: 184; --glow-b: 79;
-      --brightness: 70;
-      --rib-opacity: 0.25; /* slightly softer by default for a more uniform look */
-      --glass-tint: 255,255,255; --edge-dark: 24,24,28;
+      /* dynamic light vars */
+      --glow-r: 255; --glow-g: 184; --glow-b: 79; /* default amber */
+      --brightness: 70; /* 0–100 */
+      --glow-deg: 90deg; /* auto-set by JS based on longest side */
+      --rib-opacity: 0.25; /* frost strength */
+      --rib-angle: 90deg; /* auto-set to match orientation */
+
+      /* theme */
+      --bg-color:#121212; --text-color:#e9e9e9; --panel-bg:#1e1e1e; --muted:#b7b7b7;
+      --edge-dark: 24,24,28; --glass-tint: 255,255,255;
       --noise-opacity:.08; --corner: 28px;
-      --bg-color:#121212; --text-color:#e9e9e9; --panel-bg:#1e1e1e;
     }
 
     *{ box-sizing:border-box; }
-    html, body{ height:100%; margin:0; background:var(--bg-color); color:var(--text-color);
+    html, body{ height:100%; margin:0; }
+    body{
+      background:var(--bg-color); color:var(--text-color);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial;
-      transition: background .3s ease, color .3s ease; }
-    body.light{ --bg-color:#e9e6e3; --text-color:#1f2328; --panel-bg:#ffffff; }
+      transition: background .3s ease, color .3s ease;
+    }
+    body.light{
+      --bg-color:#e9e6e3; --text-color:#1f2328; --panel-bg:#ffffff; --muted:#59636e;
+    }
 
-    .page{ position:relative; height:100%; padding:20px; }
+    .page{ position:relative; height:100%; }
 
     /* Lamp fills viewport */
-    .frame{ position:absolute; inset:20px; border-radius:var(--corner); overflow:hidden; background:transparent; box-shadow:0 30px 70px rgba(0,0,0,.25); }
+    .frame{ position:absolute; inset:0; border-radius:var(--corner); overflow:hidden; background:transparent; }
+
+    /* Glass & edge tinting */
     .glass{ position:absolute; inset:0; border-radius:inherit; background:
       radial-gradient(120% 100% at -10% 50%, rgba(var(--edge-dark), .18), transparent 45%),
       radial-gradient(120% 100% at 110% 50%, rgba(var(--edge-dark), .18), transparent 45%),
       linear-gradient(180deg, rgba(var(--glass-tint),.5), rgba(var(--glass-tint),.35)); }
+
+    /* Frost ribbing */
     .ribs{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:
-      repeating-linear-gradient(var(--rib-angle, 90deg), rgba(255,255,255, calc(var(--rib-opacity)*.35)) 0 1px,
+      repeating-linear-gradient(var(--rib-angle), rgba(255,255,255, calc(var(--rib-opacity)*.35)) 0 1px,
       rgba(200,200,210, calc(var(--rib-opacity)*.35)) 1px 2px, rgba(150,150,160,0) 2px 5px); opacity:.9; }
+
+    /* Film grain for glass */
     .grain{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; }
     .grain::before{ content:""; position:absolute; inset:-50%; background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.45"/></svg>'); background-size:300px 300px; opacity:var(--noise-opacity); mix-blend-mode:soft-light; }
 
-    /* UNIFORM & VIBRANT GLOW
-       - Dominant soft radial bloom for even paper-lantern look
-       - Subtle axial beam preserves the "oriented" requirement
-    */
-    .glow{ position:absolute; inset: clamp(6px, 7%, 64px); border-radius: calc(var(--corner)*.6);
-      /* bigger blur = softer diffusion */
-      filter: blur(calc(6px + (var(--brightness)/100 * 18px)));
+    /* UNIFORM & VIBRANT GLOW */
+    .glow{ position:absolute; inset: clamp(6px, 7vmin, 64px); border-radius: calc(var(--corner)*.6);
+      filter: blur(calc(8px + (var(--brightness)/100 * 18px)));
       background:
         /* main even lantern fill */
         radial-gradient(closest-side at 50% 50%, rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc(var(--brightness)/85)) 0%, rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc(var(--brightness)/140)) 55%, rgba(var(--glow-r), var(--glow-g), var(--glow-b), 0) 100%),
         /* wide ambient halo to push vibrancy */
         radial-gradient(120% 120% at 50% 50%, rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc(var(--brightness)/220)) 0%, rgba(0,0,0,0) 70%),
         /* faint oriented beam (longest-side) */
-        linear-gradient(var(--glow-deg, 0deg), rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc(var(--brightness)/300)) 35%, rgba(0,0,0,0) 65%);
+        linear-gradient(var(--glow-deg), rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc(var(--brightness)/300)) 35%, rgba(0,0,0,0) 65%);
       box-shadow:
         0 0 calc(25px + 55px * (var(--brightness)/100)) rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc(var(--brightness)/130)),
         0 0 calc(60px + 120px * (var(--brightness)/100)) rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc(var(--brightness)/320));
-      mix-blend-mode: screen; /* punchier color */
+      mix-blend-mode: screen;
     }
 
     .glass::after{ content:""; position:absolute; inset:0; border-radius:inherit; background: linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0) 28%, rgba(0,0,0,.06) 65%, rgba(0,0,0,.14)); mix-blend-mode:screen; opacity:.85; }
 
-    /* Overlay control panel */
+    /* Overlay control panel (does not take layout space) */
     .panel{ position:fixed; right:20px; top:20px; bottom:20px; width: clamp(260px, 26vw, 380px); z-index:5;
       background:var(--panel-bg); border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.1);
       display:flex; flex-direction:column; padding:14px; gap:12px; transform: translateX(0); transition: transform .35s ease; overflow:hidden; }
     .panel.collapsed{ transform: translateX(calc(100% + 24px)); }
     .panel-scroll{ overflow:auto; padding:6px 2px 10px; }
-
-    .toggle-btn{ cursor:pointer; border:none; border-radius:8px; padding:8px 12px; font-weight:600; background:#333; color:#fff; align-self:flex-end; }
-    body.light .toggle-btn{ background:#ddd; color:#111; }
 
     .collapse-btn{ position:absolute; left:10px; top:10px; border:0; border-radius:8px; padding:6px 10px; font-weight:700; cursor:pointer; background:#2c2c2c; color:#fff; }
     body.light .collapse-btn{ background:#e1e1e1; color:#111; }
@@ -73,6 +82,9 @@
     .panel.collapsed + .menu-tab{ display:block; }
     body.light .menu-tab{ background:#e1e1e1; color:#111; }
 
+    .toggle-btn{ cursor:pointer; border:none; border-radius:8px; padding:8px 12px; font-weight:600; background:#333; color:#fff; }
+    body.light .toggle-btn{ background:#ddd; color:#111; }
+
     .row{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; }
     .subgrid{ display:grid; gap:8px; }
     .pill{ display:flex; gap:8px; background:#444; padding:6px; border-radius:999px; width:max-content; }
@@ -80,12 +92,12 @@
     .pill button[aria-pressed="true"]{ background:#222; color:#fff; }
     input[type="range"]{ width:100%; }
     .inline{ display:flex; align-items:center; gap:10px; }
-    .swatch{ width:26px; height:26px; border-radius:8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
-    .muted{ color:#aaa; font-size:.92rem; }
-    .credit{ margin-top:8px; font-size:.9rem; opacity:.85; }
+    .swatch{ width:28px; height:28px; border-radius:8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+    .muted{ color:var(--muted); font-size:.92rem; }
+    .credit{ margin-top:8px; font-size:.9rem; opacity:.85; text-align:center; }
     .credit a{ color:inherit; font-weight:700; text-decoration:none; }
 
-    /* Mobile: bottom sheet */
+    /* Mobile bottom sheet */
     @media (max-width: 700px){
       .panel{ left:20px; right:20px; width:auto; top:auto; bottom:20px; height:min(70vh,520px); transform: translateY(0); }
       .panel.collapsed{ transform: translateY(calc(100% + 24px)); }
@@ -95,32 +107,63 @@
 </head>
 <body>
   <div class="page">
-    <div class="frame" id="lampFrame">
+    <div class="frame" id="lampFrame" aria-label="Frosted glass lamp">
       <div class="glass"></div>
       <div class="ribs" id="ribs"></div>
       <div class="grain"></div>
-      <div class="glow" id="glow"></div>
+      <div class="glow" id="glow" role="img" aria-label="Lamp glow"></div>
     </div>
 
-    <aside class="panel" id="panel" aria-label="Controls">
-      <button id="collapse" class="collapse-btn" title="Hide controls">⇢</button>
+    <!-- Overlay Panel -->
+    <aside class="panel" id="panel">
+      <button class="collapse-btn" id="collapseBtn" title="Hide controls">⇢</button>
       <div class="panel-scroll">
-        <button id="themeToggle" class="toggle-btn">☾ Dark Mode</button>
-        <h2 style="margin:0 0 6px">Lamp Controls</h2>
-
-        <div class="row"><label for="brightness"><strong>Brightness</strong></label><div class="inline"><span id="bVal" class="muted">70</span></div></div>
-        <input id="brightness" type="range" min="0" max="100" value="70" />
-
-        <div class="subgrid">
-          <div class="pill" role="tablist"><button id="modeRGB" aria-pressed="true">RGB</button><button id="modeWhite" aria-pressed="false">White</button></div>
-          <div id="rgbControls"><div class="row"><label for="rgb">Color</label><div class="inline"><div id="swatch" class="swatch" style="background: rgb(255,184,79);"></div></div></div><input id="rgb" type="color" value="#ffb84f" /></div>
-          <div id="whiteControls" style="display:none"><div class="row"><label for="cct">White (Cold → Warmest)</label><div class="inline"><span id="cctLabel" class="muted">3500K</span></div></div><input id="cct" type="range" min="0" max="100" value="50" /></div>
+        <div class="row">
+          <h2 style="margin:0;font-size:1.1rem;">Lamp Controls</h2>
+          <button class="toggle-btn" id="themeBtn" aria-pressed="false">Dark Mode</button>
         </div>
 
-        <div class="row"><label for="ribbing">Frost Ribbing</label><div class="inline"><span id="ribVal" class="muted">25%</span></div></div>
-        <input id="ribbing" type="range" min="0" max="100" value="25" />
+        <div class="subgrid" style="margin-top:6px;">
+          <div class="pill" role="tablist" aria-label="Color Mode">
+            <button id="modeRGB" role="tab" aria-selected="true" aria-pressed="true">RGB</button>
+            <button id="modeWhite" role="tab" aria-selected="false" aria-pressed="false">White</button>
+          </div>
 
-        <p class="credit">I Love Lamp by <a href="https://opulent-hardware.github.io/-I-love-lamp/" target="_blank" rel="noopener">OPULENT HARDWARE</a></p>
+          <!-- RGB controls -->
+          <div id="rgbControls" class="subgrid">
+            <div class="row">
+              <label for="colorPicker">Color</label>
+              <div class="inline"><div class="swatch" id="swatch"></div></div>
+            </div>
+            <input id="colorPicker" type="color" value="#ffb84f" aria-label="RGB color" />
+          </div>
+
+          <!-- White mode controls -->
+          <div id="whiteControls" class="subgrid" style="display:none;">
+            <div class="row">
+              <label for="whiteSlider">White tone</label>
+              <span class="muted" id="whiteLabel">Cold</span>
+            </div>
+            <input id="whiteSlider" type="range" min="0" max="100" value="0" />
+            <div class="muted" aria-hidden="true" style="display:flex; justify-content:space-between; font-size:.85rem; margin-top:-4px;">
+              <span>Cold</span><span>Warm</span><span>Warmest</span>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:6px;">
+            <label for="brightness">Brightness</label>
+            <span id="bVal" class="muted">70</span>
+          </div>
+          <input id="brightness" type="range" min="0" max="100" value="70" />
+
+          <div class="row" style="margin-top:6px;">
+            <label for="frost">Frost (ribbing)</label>
+            <span id="fVal" class="muted">25%</span>
+          </div>
+          <input id="frost" type="range" min="0" max="100" value="25" />
+
+          <div class="credit">I Love Lamp by <a href="https://opulent-hardware.github.io/-I-love-lamp/" target="_blank" rel="noreferrer noopener">OPULENT HARDWARE</a></div>
+        </div>
       </div>
     </aside>
     <button class="menu-tab" id="menuTab" title="Show controls">☰ Menu</button>
@@ -128,53 +171,144 @@
 
   <script>
     const frame = document.getElementById('lampFrame');
-    const b = document.getElementById('brightness');
+    const ribs = document.getElementById('ribs');
+    const glow = document.getElementById('glow');
+
+    const panel = document.getElementById('panel');
+    const collapseBtn = document.getElementById('collapseBtn');
+    const menuTab = document.getElementById('menuTab');
+    const themeBtn = document.getElementById('themeBtn');
+
+    const brightness = document.getElementById('brightness');
     const bVal = document.getElementById('bVal');
-    const rgb = document.getElementById('rgb');
-    const swatch = document.getElementById('swatch');
-    const cct = document.getElementById('cct');
-    const cctLabel = document.getElementById('cctLabel');
+    const frost = document.getElementById('frost');
+    const fVal = document.getElementById('fVal');
+
     const modeRGB = document.getElementById('modeRGB');
     const modeWhite = document.getElementById('modeWhite');
     const rgbControls = document.getElementById('rgbControls');
     const whiteControls = document.getElementById('whiteControls');
-    const ribs = document.getElementById('ribs');
-    const ribbing = document.getElementById('ribbing');
-    const ribVal = document.getElementById('ribVal');
-    const themeToggle = document.getElementById('themeToggle');
-    const panel = document.getElementById('panel');
-    const collapseBtn = document.getElementById('collapse');
-    const menuTab = document.getElementById('menuTab');
 
-    const css = (prop, val) => document.documentElement.style.setProperty(prop, val);
-    function hexToRgb(hex){ const v = hex.replace('#',''); return [parseInt(v.slice(0,2),16), parseInt(v.slice(2,4),16), parseInt(v.slice(4,6),16)]; }
-    function lerpColor(a,b,t){ return [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)]; }
-    function cctToRgb(p){ const cold=[180,200,255], neutral=[255,244,229], warm=[255,180,60]; return p<.5?lerpColor(cold,neutral,p/.5):lerpColor(neutral,warm,(p-.5)/.5); }
+    const colorPicker = document.getElementById('colorPicker');
+    const swatch = document.getElementById('swatch');
 
-    function updateBrightness(){ css('--brightness', b.value); bVal.textContent = b.value; }
-    function setRgb([r,g,b]){ css('--glow-r', r); css('--glow-g', g); css('--glow-b', b); swatch.style.background = `rgb(${r},${g},${b})`; }
-    function handleRgbChange(){ setRgb(hexToRgb(rgb.value)); }
-    function handleCctChange(){ const p = +cct.value/100; const [r,g,b] = cctToRgb(p); setRgb([r,g,b]); const temp = Math.round(6500-(6500-1800)*p); cctLabel.textContent = temp+'K'; }
+    const whiteSlider = document.getElementById('whiteSlider');
+    const whiteLabel = document.getElementById('whiteLabel');
 
-    function setMode(which){ const rgbMode = which==='rgb'; rgbControls.style.display = rgbMode?'block':'none'; whiteControls.style.display = rgbMode?'none':'block'; modeRGB.setAttribute('aria-pressed', rgbMode); modeWhite.setAttribute('aria-pressed', !rgbMode); if(rgbMode) handleRgbChange(); else handleCctChange(); }
+    // Default to dark mode
+    document.body.classList.remove('light');
 
-    function updateOrientation(){ const rect = frame.getBoundingClientRect(); const longIsHorizontal = rect.width >= rect.height; css('--glow-deg', longIsHorizontal?'90deg':'0deg'); ribs.style.setProperty('--rib-angle', longIsHorizontal?'0deg':'90deg'); }
-    function updateRibbing(){ const value = ribbing.value; css('--rib-opacity', (value/100).toFixed(2)); ribVal.textContent = value+'%'; }
+    function setCSSVar(name, value){
+      document.documentElement.style.setProperty(name, value);
+    }
 
-    // Theme toggle
-    themeToggle.addEventListener('click', ()=>{ document.body.classList.toggle('light'); themeToggle.textContent = document.body.classList.contains('light') ? '☀ Light Mode' : '☾ Dark Mode'; });
+    function hexToRgb(hex){
+      const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if(!res) return {r:255,g:184,b:79};
+      return { r: parseInt(res[1],16), g: parseInt(res[2],16), b: parseInt(res[3],16)};
+    }
 
-    // Collapsible overlay
-    const collapse = ()=> panel.classList.add('collapsed');
-    const expand = ()=> panel.classList.remove('collapsed');
-    collapseBtn.addEventListener('click', collapse);
-    menuTab.addEventListener('click', expand);
+    // Approximate Kelvin to RGB (Tanner Helland)
+    function kelvinToRGB(kelvin){
+      let temp = kelvin / 100;
+      let r,g,b;
+      // Red
+      if (temp <= 66) r = 255; else { r = temp - 60; r = 329.698727446 * Math.pow(r, -0.1332047592); r = Math.min(255, Math.max(0, r)); }
+      // Green
+      if (temp <= 66) { g = 99.4708025861 * Math.log(temp) - 161.1195681661; } else { g = temp - 60; g = 288.1221695283 * Math.pow(g, -0.0755148492); }
+      g = Math.min(255, Math.max(0, g));
+      // Blue
+      if (temp >= 66) b = 255; else if (temp <= 19) b = 0; else { b = 138.5177312231 * Math.log(temp - 10) - 305.0447927307; b = Math.min(255, Math.max(0, b)); }
+      return { r: Math.round(r), g: Math.round(g), b: Math.round(b) };
+    }
 
-    // React to size
-    const ro = new ResizeObserver(updateOrientation); ro.observe(frame); window.addEventListener('resize', updateOrientation);
+    function applyRGB({r,g,b}){
+      setCSSVar('--glow-r', r);
+      setCSSVar('--glow-g', g);
+      setCSSVar('--glow-b', b);
+      swatch.style.background = `rgb(${r}, ${g}, ${b})`;
+    }
 
-    // Init
-    updateBrightness(); handleRgbChange(); updateOrientation(); updateRibbing();
+    function applyWhiteFromSlider(val){
+      // Map 0..100 -> 6500K .. 2000K (cold to warmest)
+      const k = 6500 - (4500 * (val/100));
+      const {r,g,b} = kelvinToRGB(k);
+      applyRGB({r,g,b});
+      whiteLabel.textContent = val < 15 ? 'Cold' : (val > 85 ? 'Warmest' : 'Warm');
+    }
+
+    function updateBrightness(v){
+      setCSSVar('--brightness', v);
+      bVal.textContent = v;
+    }
+
+    function updateFrost(v){
+      const pct = Math.max(0, Math.min(100, v));
+      setCSSVar('--rib-opacity', (pct/100).toFixed(3));
+      fVal.textContent = pct + '%';
+    }
+
+    function updateOrientation(){
+      const rect = frame.getBoundingClientRect();
+      const longestIsWidth = rect.width >= rect.height;
+      const deg = longestIsWidth ? 90 : 0; // beam aligns with longest side
+      setCSSVar('--glow-deg', deg + 'deg');
+      setCSSVar('--rib-angle', deg + 'deg');
+    }
+
+    // Observers
+    const ro = new ResizeObserver(updateOrientation);
+    ro.observe(frame);
+    window.addEventListener('orientationchange', updateOrientation);
+    window.addEventListener('load', updateOrientation);
+
+    // UI bindings
+    brightness.addEventListener('input', (e)=> updateBrightness(e.target.value));
+    frost.addEventListener('input', (e)=> updateFrost(e.target.value));
+
+    colorPicker.addEventListener('input', (e)=>{
+      const rgb = hexToRgb(e.target.value);
+      applyRGB(rgb);
+    });
+
+    whiteSlider.addEventListener('input', (e)=> applyWhiteFromSlider(+e.target.value));
+
+    // Mode toggle
+    function setModeRGB(){
+      modeRGB.setAttribute('aria-pressed','true');
+      modeWhite.setAttribute('aria-pressed','false');
+      rgbControls.style.display = '';
+      whiteControls.style.display = 'none';
+    }
+    function setModeWhite(){
+      modeRGB.setAttribute('aria-pressed','false');
+      modeWhite.setAttribute('aria-pressed','true');
+      rgbControls.style.display = 'none';
+      whiteControls.style.display = '';
+      applyWhiteFromSlider(+whiteSlider.value);
+    }
+    modeRGB.addEventListener('click', setModeRGB);
+    modeWhite.addEventListener('click', setModeWhite);
+
+    // Theme toggle (default dark)
+    themeBtn.addEventListener('click', ()=>{
+      const isLight = document.body.classList.toggle('light');
+      themeBtn.textContent = isLight ? 'Light Mode' : 'Dark Mode';
+      themeBtn.setAttribute('aria-pressed', String(isLight));
+    });
+
+    // Panel collapse
+    collapseBtn.addEventListener('click', ()=> panel.classList.add('collapsed'));
+    menuTab.addEventListener('click', ()=> panel.classList.remove('collapsed'));
+
+    // Initial paint
+    (function init(){
+      updateOrientation();
+      updateBrightness(brightness.value);
+      updateFrost(frost.value);
+      applyRGB(hexToRgb(colorPicker.value));
+      setModeRGB(); // default
+    })();
   </script>
 </body>
 </html>
