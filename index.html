@@ -3,24 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>I Love Lamp – Wide Glow, Edge Fade</title>
+  <title>I Love Lamp – Rectangular Fade & Realistic Shape (Vibrant)</title>
   <style>
     :root{
       --glow-r: 255; --glow-g: 184; --glow-b: 79;
-      --brightness: 70;                 /* 0–100 */
-      --glow-deg: 90deg;                /* oriented beam */
-      --rib-opacity: 0.25;              /* frost */
+      --brightness: 72;                /* 0–100 */
+      --glow-deg: 90deg;               /* oriented beam */
+      --rib-opacity: 0.24;             /* frost */
       --rib-angle: 90deg;
       --bg-color:#121212; --text-color:#e9e9e9; --panel-bg:#1e1e1e; --muted:#b7b7b7;
       --edge-dark: 24,24,28; --glass-tint: 255,255,255;
       --noise-opacity:.08; --corner: 28px;
 
-      /* White mode luminance multiplier */
+      /* White mode luminance multiplier (vibrance) */
       --white-boost: 1;
 
-      /* New: control edge fade softness (0.0…1.0) and span (percentage of radius) */
-      --edge-fade-strength: 0.10;  /* how dark the vignette is at the extreme edge */
-      --edge-fade-span: 8%;        /* last % of radius that fades */
+      /* Rectangular edge fade controls */
+      --fade-x: 7%;      /* left/right fade width */
+      --fade-y: 8%;      /* top/bottom fade height */
+      --fade-strength: 0.20; /* darkness at extreme edge */
+
+      /* Lamp padding (very small so glow fills frame) */
+      --pad: clamp(2px, 2vmin, 24px);
     }
 
     *{ box-sizing:border-box; }
@@ -35,68 +39,88 @@
     .page{ position:relative; height:100%; }
     .frame{ position:absolute; inset:0; border-radius:var(--corner); overflow:hidden; background:transparent; }
 
-    .glass{ position:absolute; inset:0; border-radius:inherit; background:
-      radial-gradient(120% 100% at -10% 50%, rgba(var(--edge-dark), .18), transparent 45%),
-      radial-gradient(120% 100% at 110% 50%, rgba(var(--edge-dark), .18), transparent 45%),
-      linear-gradient(180deg, rgba(var(--glass-tint),.5), rgba(var(--glass-tint),.35)); }
+    /* Glass & realistic cylindrical shading */
+    .glass{
+      position:absolute; inset:0; border-radius:inherit;
+      background:
+        /* soft vertical cylinder shading on the glass body */
+        linear-gradient(90deg, rgba(0,0,0,.18), transparent 16%, transparent 84%, rgba(0,0,0,.18)),
+        /* slight top highlight / bottom lift to mimic volume */
+        linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 26%, rgba(0,0,0,.08) 72%, rgba(0,0,0,.14)),
+        /* lateral edge darkening for depth */
+        radial-gradient(120% 100% at -10% 50%, rgba(var(--edge-dark), .22), transparent 46%),
+        radial-gradient(120% 100% at 110% 50%, rgba(var(--edge-dark), .22), transparent 46%),
+        linear-gradient(180deg, rgba(var(--glass-tint),.48), rgba(var(--glass-tint),.33));
+    }
 
     .ribs{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:
-      repeating-linear-gradient(var(--rib-angle), rgba(255,255,255, calc(var(--rib-opacity)*.35)) 0 1px,
-      rgba(200,200,210, calc(var(--rib-opacity)*.35)) 1px 2px, rgba(150,150,160,0) 2px 5px); opacity:.9; }
+      repeating-linear-gradient(var(--rib-angle),
+        rgba(255,255,255, calc(var(--rib-opacity)*.32)) 0 1px,
+        rgba(200,200,210, calc(var(--rib-opacity)*.32)) 1px 2px,
+        rgba(150,150,160,0) 2px 5px);
+      opacity:.9;
+    }
 
     .grain{ position:absolute; inset:0; border-radius:inherit; pointer-events:none; }
     .grain::before{ content:""; position:absolute; inset:-50%;
       background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.45"/></svg>');
       background-size:300px 300px; opacity:var(--noise-opacity); mix-blend-mode:soft-light; }
 
-    /* ==== BIGGER, BRIGHTER, EDGE-FADE GLOW ==== */
+    /* ===== BIGGER, BRIGHTER GLOW with rectangular feel ===== */
     .glow{
       position:absolute;
-      /* Very tight inset so the glow fills the frame */
-      inset: clamp(2px, 2vmin, 24px);
+      inset: var(--pad);
       border-radius: calc(var(--corner)*.55);
 
-      /* Slightly stronger blur to unify */
-      filter: blur(calc(10px + (var(--brightness)/100 * 22px)));
+      /* More blur to unify, vibrant core */
+      filter: blur(calc(12px + (var(--brightness)/100 * 26px)));
 
-      /* Main fill nearly to the edge; only the last few % fades out */
       background:
-        /* Core lantern fill (high alpha, slow falloff) */
+        /* Core lantern fill – high alpha, falls off only near edges */
         radial-gradient(farthest-side at 50% 50%,
-          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/60) * var(--white-boost))) 0%,
-          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/80) * var(--white-boost))) calc(100% - var(--edge-fade-span)),
+          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/48) * var(--white-boost))) 0%,
+          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/62) * var(--white-boost))) 78%,
+          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/95) * var(--white-boost))) 92%,
           rgba(var(--glow-r), var(--glow-g), var(--glow-b), 0) 100%),
 
-        /* Wide halo to push vibrancy on dark bg */
+        /* Wide ambient halo to push vibrancy on dark bg */
         radial-gradient(120% 120% at 50% 50%,
-          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/180) * var(--white-boost))) 0%,
+          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/150) * var(--white-boost))) 0%,
           rgba(0,0,0,0) 70%),
 
-        /* Faint oriented beam to honor longest-side requirement */
+        /* Faint oriented beam along longest side */
         linear-gradient(var(--glow-deg),
-          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/220) * var(--white-boost))) 38%,
+          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/200) * var(--white-boost))) 40%,
           rgba(0,0,0,0) 64%);
 
       /* Stronger global bloom */
       box-shadow:
-        0 0 calc(40px + 70px * (var(--brightness)/100))
-          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/95) * var(--white-boost))),
-        0 0 calc(110px + 160px * (var(--brightness)/100))
-          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/250) * var(--white-boost)));
+        0 0 calc(50px + 90px * (var(--brightness)/100))
+          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/85) * var(--white-boost))),
+        0 0 calc(140px + 200px * (var(--brightness)/100))
+          rgba(var(--glow-r), var(--glow-g), var(--glow-b), calc((var(--brightness)/210) * var(--white-boost)));
 
       mix-blend-mode: screen;
     }
 
-    /* Subtle edge vignette so only edges fade slightly */
-    .edge-fade{
-      position:absolute; inset: clamp(2px, 2vmin, 24px);
+    /* ===== Rectangular edge fade (only edges taper) =====
+       Uses two linear-gradients (horizontal + vertical), multiplied via blend mode.
+    */
+    .rect-fade{
+      position:absolute; inset: var(--pad);
       border-radius: calc(var(--corner)*.55);
       pointer-events:none;
       background:
-        radial-gradient(farthest-side at 50% 50%,
-          rgba(0,0,0,0) 0,
-          rgba(0,0,0,0) calc(100% - var(--edge-fade-span)),
-          rgba(0,0,0,var(--edge-fade-strength)) 100%);
+        /* Left + Right edges */
+        linear-gradient(to right,
+          rgba(0,0,0,var(--fade-strength)) 0 var(--fade-x),
+          rgba(0,0,0,0) var(--fade-x) calc(100% - var(--fade-x)),
+          rgba(0,0,0,var(--fade-strength)) calc(100% - var(--fade-x)) 100%),
+        /* Top + Bottom edges */
+        linear-gradient(to bottom,
+          rgba(0,0,0,var(--fade-strength)) 0 var(--fade-y),
+          rgba(0,0,0,0) var(--fade-y) calc(100% - var(--fade-y)),
+          rgba(0,0,0,var(--fade-strength)) calc(100% - var(--fade-y)) 100%);
       mix-blend-mode: multiply;
     }
 
@@ -151,10 +175,10 @@
       <div class="ribs" id="ribs"></div>
       <div class="grain"></div>
 
-      <!-- Bigger/brighter glow -->
+      <!-- Vibrant glow -->
       <div class="glow" id="glow" role="img" aria-label="Lamp glow"></div>
-      <!-- Slight edge fade overlay -->
-      <div class="edge-fade" aria-hidden="true"></div>
+      <!-- Rectangular edge fade overlay -->
+      <div class="rect-fade" aria-hidden="true"></div>
     </div>
 
     <aside class="panel" id="panel">
@@ -202,15 +226,15 @@
 
           <div class="row" style="margin-top:6px;">
             <label for="brightness">Brightness</label>
-            <span id="bVal" class="muted">70</span>
+            <span id="bVal" class="muted">72</span>
           </div>
-          <input id="brightness" type="range" min="0" max="100" value="70" />
+          <input id="brightness" type="range" min="0" max="100" value="72" />
 
           <div class="row" style="margin-top:6px;">
             <label for="frost">Frost (ribbing)</label>
-            <span id="fVal" class="muted">25%</span>
+            <span id="fVal" class="muted">24%</span>
           </div>
-          <input id="frost" type="range" min="0" max="100" value="25" />
+          <input id="frost" type="range" min="0" max="100" value="24" />
 
           <div class="credit">I Love Lamp by
             <a href="https://opulent-hardware.github.io/-I-love-lamp/" target="_blank" rel="noreferrer noopener">OPULENT HARDWARE</a>
@@ -263,7 +287,7 @@
     const themeBtn = document.getElementById('themeBtn');
 
     const modeRGB = document.getElementById('modeRGB');
-    const modeWhite = document.getElementById('modeWhite');
+    theModeWhite = document.getElementById('modeWhite');
     const rgbControls = document.getElementById('rgbControls');
     const whiteControls = document.getElementById('whiteControls');
 
@@ -347,7 +371,7 @@
       modeWhite.setAttribute('aria-pressed','true');
       rgbControls.style.display = 'none';
       whiteControls.style.display = '';
-      setCSSVar('--white-boost', 3.0);   // strong boost for testing
+      setCSSVar('--white-boost', 3.5);   // stronger boost
       applyWhiteFromSlider(+whiteSlider.value);
     }
     function applyWhiteFromSlider(val){
