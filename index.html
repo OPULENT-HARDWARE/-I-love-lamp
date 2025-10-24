@@ -230,4 +230,177 @@
       let t=k/100,r,g,b;
       if (t<=66) r=255; else { r=t-60; r=329.698727446*Math.pow(r,-0.1332047592); r=Math.min(255,Math.max(0,r)); }
       if (t<=66) { g=99.4708025861*Math.log(t)-161.1195681661; }
-      else { g=t-60; g=28
+      else { g=t-60; g=288.1221695283*Math.pow(g,-0.0755148492); }
+      g=Math.min(255,Math.max(0,g));
+      if (t>=66) b=255; else if (t<=19) b=0; else { b=138.5177312231*Math.log(t-10)-305.0447927307; b=Math.min(255,Math.max(0,b)); }
+      return { r:Math.round(r), g:Math.round(g), b:Math.round(b) };
+    }
+
+    /* --- DOM refs --- */
+    const frame = document.getElementById('lampFrame');
+    const ribs = document.getElementById('ribs');
+    const glow = document.getElementById('glow');
+
+    const panel = document.getElementById('panel');
+    const collapseBtn = document.getElementById('collapseBtn');
+    const menuTab = document.getElementById('menuTab');
+    const themeBtn = document.getElementById('themeBtn');
+
+    const brightness = document.getElementById('brightness');
+    const bVal = document.getElementById('bVal');
+    const frost = document.getElementById('frost');
+    const fVal = document.getElementById('fVal');
+
+    const modeRGB = document.getElementById('modeRGB');
+    const modeWhite = document.getElementById('modeWhite');
+    const rgbControls = document.getElementById('rgbControls');
+    const whiteControls = document.getElementById('whiteControls');
+
+    const swatch = document.getElementById('swatch');
+    const whiteSlider = document.getElementById('whiteSlider');
+    const whiteLabel = document.getElementById('whiteLabel');
+
+    // Custom picker refs
+    const hue = document.getElementById('hue');
+    const svWrap = document.getElementById('svWrap');
+    const sv = document.getElementById('sv');
+    const svCursor = document.getElementById('svCursor');
+
+    const rSlider = document.getElementById('rSlider');
+    const gSlider = document.getElementById('gSlider');
+    const bSlider = document.getElementById('bSlider');
+    const rVal = document.getElementById('rVal');
+    const gVal = document.getElementById('gVal');
+    const bValRGB = document.getElementById('bValRGB');
+
+    // State: HSV drives the picker
+    let H = 40, S = 40, V = 90;
+
+    function setSVBackground(){
+      // Hue-colored base for SV square
+      const {r,g,b} = hsvToRgb(H,100,100);
+      sv.style.background = `rgb(${r},${g},${b})`;
+    }
+    function paintFromHSV(){
+      setSVBackground();
+      const {r,g,b} = hsvToRgb(H,S,V);
+      applyRGB({r,g,b});
+      // move cursor
+      const rect = svWrap.getBoundingClientRect();
+      const x = (S/100)*rect.width;
+      const y = ((100-V)/100)*rect.height;
+      svCursor.style.left = x+'px';
+      svCursor.style.top = y+'px';
+      hue.value = H;
+    }
+
+    function onHueInput(e){
+      H = +e.target.value;
+      paintFromHSV();
+    }
+
+    function svFromEvent(clientX, clientY){
+      const rect = svWrap.getBoundingClientRect();
+      const x = clamp(clientX - rect.left, 0, rect.width);
+      const y = clamp(clientY - rect.top, 0, rect.height);
+      S = Math.round((x/rect.width)*100);
+      V = Math.round(100 - (y/rect.height)*100);
+      paintFromHSV();
+    }
+
+    // SV pointer interactions
+    let dragging = false;
+    const startSV = (e)=>{
+      dragging = true;
+      const pt = ('touches' in e) ? e.touches[0] : e;
+      svFromEvent(pt.clientX, pt.clientY);
+      e.preventDefault();
+    };
+    const moveSV = (e)=>{
+      if(!dragging) return;
+      const pt = ('touches' in e) ? e.touches[0] : e;
+      svFromEvent(pt.clientX, pt.clientY);
+    };
+    const endSV = ()=> dragging = false;
+
+    svWrap.addEventListener('mousedown', startSV);
+    svWrap.addEventListener('touchstart', startSV, {passive:false});
+    window.addEventListener('mousemove', moveSV);
+    window.addEventListener('touchmove', moveSV, {passive:false});
+    window.addEventListener('mouseup', endSV);
+    window.addEventListener('touchend', endSV);
+
+    hue.addEventListener('input', onHueInput);
+    hue.addEventListener('change', onHueInput);
+
+    // Sync from RGB sliders
+    function fromRgbSliders(){
+      const r = +rSlider.value, g = +gSlider.value, b = +bSlider.value;
+      const {h,s,v} = rgbToHsv(r,g,b);
+      H = h; S = s; V = v;
+      paintFromHSV();
+    }
+    rSlider.addEventListener('input', fromRgbSliders);
+    gSlider.addEventListener('input', fromRgbSliders);
+    bSlider.addEventListener('input', fromRgbSliders);
+
+    // Brightness/Frost/Orientation
+    function updateBrightness(v){ setCSSVar('--brightness', v); bVal.textContent = v; }
+    function updateFrost(v){ setCSSVar('--rib-opacity', (v/100).toFixed(3)); fVal.textContent = v + '%'; }
+    function updateOrientation(){
+      const rect = frame.getBoundingClientRect();
+      const longestIsWidth = rect.width >= rect.height;
+      const deg = longestIsWidth ? 90 : 0;
+      setCSSVar('--glow-deg', deg + 'deg');
+      setCSSVar('--rib-angle', deg + 'deg');
+    }
+    const ro = new ResizeObserver(updateOrientation); ro.observe(frame);
+    window.addEventListener('orientationchange', updateOrientation);
+    window.addEventListener('load', updateOrientation);
+
+    brightness.addEventListener('input', e => updateBrightness(e.target.value));
+    frost.addEventListener('input', e => updateFrost(e.target.value));
+
+    // Mode switching
+    function setModeRGB(){
+      modeRGB.setAttribute('aria-pressed','true');
+      modeWhite.setAttribute('aria-pressed','false');
+      rgbControls.style.display = '';
+      whiteControls.style.display = 'none';
+    }
+    function setModeWhite(){
+      modeRGB.setAttribute('aria-pressed','false');
+      modeWhite.setAttribute('aria-pressed','true');
+      rgbControls.style.display = 'none';
+      whiteControls.style.display = '';
+      // map 0..100 -> 6500K .. 2000K
+      const v = +whiteSlider.value;
+      const k = 6500 - (4500 * (v/100));
+      const {r,g,b} = kelvinToRGB(k);
+      applyRGB({r,g,b});
+      whiteLabel.textContent = v < 15 ? 'Cold' : (v > 85 ? 'Warmest' : 'Warm');
+    }
+    modeRGB.addEventListener('click', setModeRGB);
+    modeWhite.addEventListener('click', setModeWhite);
+    whiteSlider.addEventListener('input', ()=> setModeWhite());
+
+    // Theme + panel
+    themeBtn.addEventListener('click', ()=>{
+      const isLight = document.body.classList.toggle('light');
+      themeBtn.textContent = isLight ? 'Light Mode' : 'Dark Mode';
+      themeBtn.setAttribute('aria-pressed', String(isLight));
+    });
+    collapseBtn.addEventListener('click', ()=> panel.classList.add('collapsed'));
+    menuTab.addEventListener('click', ()=> panel.classList.remove('collapsed'));
+
+    // Init
+    (function init(){
+      updateOrientation();
+      updateBrightness(brightness.value);
+      updateFrost(frost.value);
+      paintFromHSV(); // paints swatch + rgb sliders
+      setModeRGB();   // default mode
+    })();
+  </script>
+</body>
+</html>
